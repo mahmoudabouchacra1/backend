@@ -1,16 +1,24 @@
 const authService = require("../services/authService");
 
 async function register(req, res) {
-  const { email, password } = req.validatedAuth;
+  const { email, password, fullName, merchantName, countryId, plan } =
+    req.validatedRegister;
 
   try {
-    const user = await authService.register({ email, password });
+    const user = await authService.register({
+      email,
+      password,
+      fullName,
+      merchantName,
+      countryId,
+      plan,
+    });
     res.status(201).json({
       message: "registered successfully",
       data: user,
     });
   } catch (error) {
-    if (error?.code === "ER_DUP_ENTRY") {
+    if (error?.code === "EMAIL_EXISTS" || error?.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ message: "email already exists" });
     }
     res.status(500).json({ message: "database error" });

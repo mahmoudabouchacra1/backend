@@ -7,20 +7,102 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  @@map("users")
+enum MerchantPlan {
+  FREE
+  PRO
+  ENTERPRISE
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  body      String
-  createdAt DateTime @default(now()) @map("created_at")
+enum UserType {
+  MERCHANT
+  VENDOR
+  STAFF
+}
 
-  @@map("posts")
+model Country {
+  id             Int        @id @default(autoincrement())
+  name           String
+  iso2           String
+  iso3           String
+  phoneCode      String     @map("phone_code")
+  currencyCode   String     @map("currency_code")
+  currencyName   String     @map("currency_name")
+  currencySymbol String     @map("currency_symbol")
+  flagUrl        String?    @map("flag_url")
+  isActive       Boolean    @map("is_active")
+  createdAt      DateTime   @map("created_at")
+  createdBy      Int        @map("created_by")
+  updatedAt      DateTime   @map("updated_at")
+  updatedBy      Int?       @map("updated_by")
+
+  merchants      Merchant[]
+
+  @@map("countries")
+}
+
+model Merchant {
+  id         Int          @id @default(autoincrement())
+  name       String
+  logo       String?
+  email      String?
+  phone      String?
+  countryId  Int          @map("country_id")
+  address    String?
+  plan       MerchantPlan
+  isActive   Boolean      @map("is_active")
+  createdAt  DateTime     @map("created_at")
+  createdBy  Int          @map("created_by")
+  updatedAt  DateTime     @map("updated_at")
+  updatedBy  Int?         @map("updated_by")
+
+  country    Country      @relation(fields: [countryId], references: [id])
+  vendors    Vendor[]
+  users      User[]
+
+  @@map("merchants")
+}
+
+model Vendor {
+  id         Int       @id @default(autoincrement())
+  merchantId Int       @map("merchant_id")
+  name       String
+  code       String?
+  logo       String?
+  email      String?
+  phone      String?
+  address    String?
+  isActive   Boolean   @map("is_active")
+  createdAt  DateTime  @map("created_at")
+  createdBy  Int       @map("created_by")
+  updatedAt  DateTime  @map("updated_at")
+  updatedBy  Int?      @map("updated_by")
+
+  merchant   Merchant  @relation(fields: [merchantId], references: [id])
+  users      User[]
+
+  @@map("vendors")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  merchantId      Int       @map("merchant_id")
+  vendorId        Int?      @map("vendor_id")
+  userType        UserType  @map("user_type")
+  fullName        String    @map("full_name")
+  email           String
+  passwordHash    String    @map("password_hash")
+  phone           String?
+  avatar          String?
+  isEmailVerified Boolean   @map("is_email_verified")
+  lastLoginAt     DateTime? @map("last_login_at")
+  isActive        Boolean   @map("is_active")
+  createdAt       DateTime  @map("created_at")
+  createdBy       Int       @map("created_by")
+  updatedAt       DateTime  @map("updated_at")
+  updatedBy       Int?      @map("updated_by")
+
+  merchant        Merchant  @relation(fields: [merchantId], references: [id])
+  vendor          Vendor?   @relation(fields: [vendorId], references: [id])
+
+  @@map("users")
 }
