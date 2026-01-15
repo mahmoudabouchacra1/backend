@@ -1,11 +1,30 @@
+const jwt = require("jsonwebtoken");
+
 const authService = require("../services/authService");
+
+function createToken(user) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not configured");
+  }
+
+  return jwt.sign(
+    {
+      userId: user.id,
+      userType: user.userType,
+      merchantId: user.merchantId,
+    },
+    secret,
+    { expiresIn: "7d" }
+  );
+}
 
 async function register(req, res) {
   const { email, password, fullName, merchantName, countryId, plan } =
     req.validatedRegister;
 
   try {
-    const user = await authService.register({
+    const result = await authService.register({
       email,
       password,
       fullName,
@@ -13,9 +32,14 @@ async function register(req, res) {
       countryId,
       plan,
     });
+    const token = createToken(result.user);
     res.status(201).json({
       message: "registered successfully",
-      data: user,
+      data: {
+        user: result.user,
+        merchant: result.merchant,
+      },
+      token,
     });
   } catch (error) {
     if (error?.code === "EMAIL_EXISTS" || error?.code === "ER_DUP_ENTRY") {
@@ -35,7 +59,9 @@ async function login(req, res) {
       return res.status(401).json({ message: "invalid credentials" });
     }
 
-    res.json({ message: "login successful", data: user });
+    const token = createToken(user);
+
+    res.json({ message: "login successful", data: user, token });
   } catch (error) {
     res.status(500).json({ message: "database error" });
   }

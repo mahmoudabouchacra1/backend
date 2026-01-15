@@ -47,7 +47,7 @@ async function deleteUser(id) {
 }
 
 async function findUserByEmail(email) {
-  return prisma.user.findFirst({ where: { email } });
+  return prisma.user.findUnique({ where: { email } });
 }
 
 module.exports = {

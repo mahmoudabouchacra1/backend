@@ -1,7 +1,7 @@
 const usersRepository = require("../repositories/usersRepository");
 const usersService = require("../services/usersService");
 
-const allowedUserTypes = new Set(["MERCHANT", "VENDOR", "STAFF"]);
+const allowedUserTypes = new Set(["ADMIN", "MERCHANT", "VENDOR", "STAFF"]);
 
 function parseInteger(value) {
   const parsed = Number(value);
@@ -54,7 +54,6 @@ async function create(req, res) {
     avatar,
     isEmailVerified,
     isActive,
-    createdBy,
   } = req.body || {};
 
   if (!merchantId || !userType || !fullName || !email || !password) {
@@ -81,8 +80,6 @@ async function create(req, res) {
 
   const activeValue = parseBoolean(isActive);
   const verifiedValue = parseBoolean(isEmailVerified);
-  const creatorId = parseInteger(createdBy) ?? 0;
-
   try {
     const user = await usersService.createUser({
       merchantId: parsedMerchantId,
@@ -95,7 +92,7 @@ async function create(req, res) {
       avatar: avatar ? String(avatar) : null,
       isEmailVerified: verifiedValue ?? false,
       isActive: activeValue ?? true,
-      createdBy: creatorId,
+      createdBy: req.auth.userId,
       updatedBy: null,
     });
 
@@ -120,10 +117,9 @@ async function update(req, res) {
     isEmailVerified,
     isActive,
     lastLoginAt,
-    updatedBy,
   } = req.body || {};
 
-  const data = { updatedAt: new Date() };
+  const data = { updatedAt: new Date(), updatedBy: req.auth.userId };
 
   if (merchantId !== undefined) {
     const parsedMerchantId = parseInteger(merchantId);
@@ -185,15 +181,7 @@ async function update(req, res) {
     }
     data.lastLoginAt = parsedDate;
   }
-  if (updatedBy !== undefined) {
-    const parsedUpdatedBy = parseInteger(updatedBy);
-    if (!parsedUpdatedBy) {
-      return res.status(400).json({ message: "valid updatedBy required" });
-    }
-    data.updatedBy = parsedUpdatedBy;
-  }
-
-  if (Object.keys(data).length === 1) {
+  if (Object.keys(data).length === 2) {
     return res.status(400).json({ message: "no fields to update" });
   }
 

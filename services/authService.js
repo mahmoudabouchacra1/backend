@@ -16,6 +16,17 @@ async function register(payload) {
   const passwordHash = await bcrypt.hash(password, 10);
   const now = new Date();
 
+  const userSelect = {
+    id: true,
+    email: true,
+    userType: true,
+    merchantId: true,
+    fullName: true,
+    isActive: true,
+    isEmailVerified: true,
+    createdAt: true,
+  };
+
   const result = await prisma.$transaction(async (tx) => {
     let resolvedCountryId = countryId;
 
@@ -83,15 +94,15 @@ async function register(payload) {
         updatedAt: now,
         updatedBy: null,
       },
+      select: userSelect,
     });
 
     return { merchant, user };
   });
 
   return {
-    id: result.user.id,
-    email: result.user.email,
-    merchantId: result.merchant.id,
+    user: result.user,
+    merchant: result.merchant,
   };
 }
 
@@ -99,7 +110,7 @@ async function login(payload) {
   const { email, password } = payload;
   const user = await usersRepository.findUserByEmail(email);
 
-  if (!user) {
+  if (!user || !user.isActive) {
     return null;
   }
 
@@ -118,7 +129,12 @@ async function login(payload) {
     },
   });
 
-  return { id: user.id, email };
+  return {
+    id: user.id,
+    email: user.email,
+    userType: user.userType,
+    merchantId: user.merchantId,
+  };
 }
 
 module.exports = {

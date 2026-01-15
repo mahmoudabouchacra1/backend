@@ -49,7 +49,6 @@ async function create(req, res) {
     phone,
     address,
     isActive,
-    createdBy,
   } = req.body || {};
 
   if (!name) {
@@ -63,8 +62,6 @@ async function create(req, res) {
 
   const now = new Date();
   const activeValue = parseBoolean(isActive);
-  const creatorId = parseInteger(createdBy) ?? 0;
-
   try {
     const vendor = await vendorsRepository.createVendor({
       merchantId: parsedMerchantId,
@@ -76,7 +73,7 @@ async function create(req, res) {
       address: address ? String(address) : null,
       isActive: activeValue ?? true,
       createdAt: now,
-      createdBy: creatorId,
+      createdBy: req.auth.userId,
       updatedAt: now,
       updatedBy: null,
     });
@@ -97,10 +94,9 @@ async function update(req, res) {
     phone,
     address,
     isActive,
-    updatedBy,
   } = req.body || {};
 
-  const data = { updatedAt: new Date() };
+  const data = { updatedAt: new Date(), updatedBy: req.auth.userId };
 
   if (merchantId !== undefined) {
     const parsedMerchantId = parseInteger(merchantId);
@@ -134,15 +130,7 @@ async function update(req, res) {
     }
     data.isActive = parsedActive;
   }
-  if (updatedBy !== undefined) {
-    const parsedUpdatedBy = parseInteger(updatedBy);
-    if (!parsedUpdatedBy) {
-      return res.status(400).json({ message: "valid updatedBy required" });
-    }
-    data.updatedBy = parsedUpdatedBy;
-  }
-
-  if (Object.keys(data).length === 1) {
+  if (Object.keys(data).length === 2) {
     return res.status(400).json({ message: "no fields to update" });
   }
 

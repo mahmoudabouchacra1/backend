@@ -50,7 +50,6 @@ async function create(req, res) {
     currencySymbol,
     flagUrl,
     isActive,
-    createdBy,
   } = req.body || {};
 
   if (!name || !iso2 || !iso3 || !phoneCode || !currencyCode || !currencyName) {
@@ -59,8 +58,6 @@ async function create(req, res) {
 
   const now = new Date();
   const activeValue = parseBoolean(isActive);
-  const creatorId = parseInteger(createdBy) ?? 0;
-
   try {
     const country = await countriesRepository.createCountry({
       name: String(name).trim(),
@@ -73,7 +70,7 @@ async function create(req, res) {
       flagUrl: flagUrl ? String(flagUrl) : null,
       isActive: activeValue ?? true,
       createdAt: now,
-      createdBy: creatorId,
+      createdBy: req.auth.userId,
       updatedAt: now,
       updatedBy: null,
     });
@@ -95,10 +92,9 @@ async function update(req, res) {
     currencySymbol,
     flagUrl,
     isActive,
-    updatedBy,
   } = req.body || {};
 
-  const data = { updatedAt: new Date() };
+  const data = { updatedAt: new Date(), updatedBy: req.auth.userId };
 
   if (name !== undefined) {
     data.name = String(name).trim();
@@ -131,15 +127,7 @@ async function update(req, res) {
     }
     data.isActive = parsedActive;
   }
-  if (updatedBy !== undefined) {
-    const parsedUpdatedBy = parseInteger(updatedBy);
-    if (!parsedUpdatedBy) {
-      return res.status(400).json({ message: "valid updatedBy required" });
-    }
-    data.updatedBy = parsedUpdatedBy;
-  }
-
-  if (Object.keys(data).length === 1) {
+  if (Object.keys(data).length === 2) {
     return res.status(400).json({ message: "no fields to update" });
   }
 
