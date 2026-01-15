@@ -25,7 +25,7 @@ async function list(req, res) {
       return res.json({ data: merchants });
     }
 
-    if (req.auth.userType === "MERCHANT") {
+    if (req.auth.userType === "MERCHANT" || req.auth.userType === "STAFF") {
       const merchants = await merchantsRepository.listMerchantsById(
         req.auth.merchantId
       );
@@ -40,7 +40,10 @@ async function list(req, res) {
 
 async function getById(req, res) {
   try {
-    if (req.auth.userType === "MERCHANT" && req.validatedId !== req.auth.merchantId) {
+    if (
+      (req.auth.userType === "MERCHANT" || req.auth.userType === "STAFF") &&
+      req.validatedId !== req.auth.merchantId
+    ) {
       return res.status(403).json({ message: "access denied" });
     }
     const merchant = await merchantsRepository.getMerchantById(req.validatedId);

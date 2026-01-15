@@ -42,7 +42,7 @@ async function summary(req, res) {
         prisma.country.count(),
         prisma.country.count({ where: { isActive: true } }),
       ]);
-    } else if (req.auth.userType === "MERCHANT") {
+    } else if (req.auth.userType === "MERCHANT" || req.auth.userType === "STAFF") {
       [
         merchantsTotal,
         merchantsActive,

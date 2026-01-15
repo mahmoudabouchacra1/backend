@@ -29,7 +29,7 @@ async function list(req, res) {
       return res.json({ data: users });
     }
 
-    if (req.auth.userType === "MERCHANT") {
+    if (req.auth.userType === "MERCHANT" || req.auth.userType === "STAFF") {
       const users = await usersRepository.listUsersByMerchantId(
         req.auth.merchantId
       );
@@ -54,7 +54,10 @@ async function getById(req, res) {
       return res.status(404).json({ message: "user not found" });
     }
 
-    if (req.auth.userType === "MERCHANT" && user.merchantId !== req.auth.merchantId) {
+    if (
+      (req.auth.userType === "MERCHANT" || req.auth.userType === "STAFF") &&
+      user.merchantId !== req.auth.merchantId
+    ) {
       return res.status(403).json({ message: "access denied" });
     }
     if (req.auth.userType === "VENDOR" && user.vendorId !== req.auth.vendorId) {
@@ -68,7 +71,7 @@ async function getById(req, res) {
 }
 
 async function create(req, res) {
-  if (req.auth.userType === "VENDOR") {
+  if (req.auth.userType === "VENDOR" || req.auth.userType === "STAFF") {
     return res.status(403).json({ message: "access denied" });
   }
   const {
@@ -92,7 +95,10 @@ async function create(req, res) {
   if (!parsedMerchantId) {
     return res.status(400).json({ message: "valid merchantId required" });
   }
-  if (req.auth.userType === "MERCHANT" && parsedMerchantId !== req.auth.merchantId) {
+  if (
+    req.auth.userType === "MERCHANT" &&
+    parsedMerchantId !== req.auth.merchantId
+  ) {
     return res.status(403).json({ message: "access denied" });
   }
 
@@ -146,7 +152,7 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
-  if (req.auth.userType === "VENDOR") {
+  if (req.auth.userType === "VENDOR" || req.auth.userType === "STAFF") {
     return res.status(403).json({ message: "access denied" });
   }
   if (req.auth.userType === "MERCHANT") {
