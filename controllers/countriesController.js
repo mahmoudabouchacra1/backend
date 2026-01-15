@@ -40,6 +40,9 @@ async function getById(req, res) {
 }
 
 async function create(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   const {
     name,
     iso2,
@@ -82,6 +85,9 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   const {
     name,
     iso2,
@@ -140,6 +146,9 @@ async function update(req, res) {
 }
 
 async function remove(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   try {
     await countriesRepository.deleteCountry(req.validatedId);
     res.json({ message: "country deleted" });

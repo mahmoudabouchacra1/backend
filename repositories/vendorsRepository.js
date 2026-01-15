@@ -7,6 +7,21 @@ async function listVendors() {
   });
 }
 
+async function listVendorsByMerchantId(merchantId) {
+  return prisma.vendor.findMany({
+    where: { merchantId },
+    include: { merchant: true },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+async function listVendorsById(id) {
+  return prisma.vendor.findMany({
+    where: { id },
+    include: { merchant: true },
+  });
+}
+
 async function getVendorById(id) {
   return prisma.vendor.findUnique({
     where: { id },
@@ -28,6 +43,8 @@ async function deleteVendor(id) {
 
 module.exports = {
   listVendors,
+  listVendorsByMerchantId,
+  listVendorsById,
   getVendorById,
   createVendor,
   updateVendor,

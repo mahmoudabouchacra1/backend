@@ -20,8 +20,24 @@ function parseBoolean(value) {
 
 async function list(req, res) {
   try {
-    const vendors = await vendorsRepository.listVendors();
-    res.json({ data: vendors });
+    if (req.auth.userType === "ADMIN") {
+      const vendors = await vendorsRepository.listVendors();
+      return res.json({ data: vendors });
+    }
+
+    if (req.auth.userType === "MERCHANT") {
+      const vendors = await vendorsRepository.listVendorsByMerchantId(
+        req.auth.merchantId
+      );
+      return res.json({ data: vendors });
+    }
+
+    if (req.auth.userType === "VENDOR" && req.auth.vendorId) {
+      const vendors = await vendorsRepository.listVendorsById(req.auth.vendorId);
+      return res.json({ data: vendors });
+    }
+
+    return res.status(403).json({ message: "access denied" });
   } catch (error) {
     res.status(500).json({ message: "database error" });
   }
@@ -29,6 +45,21 @@ async function list(req, res) {
 
 async function getById(req, res) {
   try {
+    if (req.auth.userType === "MERCHANT") {
+      const vendor = await vendorsRepository.getVendorById(req.validatedId);
+      if (!vendor) {
+        return res.status(404).json({ message: "vendor not found" });
+      }
+      if (vendor.merchantId !== req.auth.merchantId) {
+        return res.status(403).json({ message: "access denied" });
+      }
+      return res.json({ data: vendor });
+    }
+
+    if (req.auth.userType === "VENDOR" && req.validatedId !== req.auth.vendorId) {
+      return res.status(403).json({ message: "access denied" });
+    }
+
     const vendor = await vendorsRepository.getVendorById(req.validatedId);
     if (!vendor) {
       return res.status(404).json({ message: "vendor not found" });
@@ -40,6 +71,9 @@ async function getById(req, res) {
 }
 
 async function create(req, res) {
+  if (req.auth.userType === "VENDOR") {
+    return res.status(403).json({ message: "access denied" });
+  }
   const {
     merchantId,
     name,
@@ -58,6 +92,9 @@ async function create(req, res) {
   const parsedMerchantId = parseInteger(merchantId);
   if (!parsedMerchantId) {
     return res.status(400).json({ message: "valid merchantId required" });
+  }
+  if (req.auth.userType === "MERCHANT" && parsedMerchantId !== req.auth.merchantId) {
+    return res.status(403).json({ message: "access denied" });
   }
 
   const now = new Date();
@@ -85,6 +122,20 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
+  if (req.auth.userType === "VENDOR") {
+    return res.status(403).json({ message: "access denied" });
+  }
+  if (req.auth.userType === "MERCHANT") {
+    const existingVendor = await vendorsRepository.getVendorById(
+      req.validatedId
+    );
+    if (!existingVendor) {
+      return res.status(404).json({ message: "vendor not found" });
+    }
+    if (existingVendor.merchantId !== req.auth.merchantId) {
+      return res.status(403).json({ message: "access denied" });
+    }
+  }
   const {
     merchantId,
     name,
@@ -102,6 +153,9 @@ async function update(req, res) {
     const parsedMerchantId = parseInteger(merchantId);
     if (!parsedMerchantId) {
       return res.status(400).json({ message: "valid merchantId required" });
+    }
+    if (req.auth.userType === "MERCHANT" && parsedMerchantId !== req.auth.merchantId) {
+      return res.status(403).json({ message: "access denied" });
     }
     data.merchantId = parsedMerchantId;
   }
@@ -143,6 +197,9 @@ async function update(req, res) {
 }
 
 async function remove(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   try {
     await vendorsRepository.deleteVendor(req.validatedId);
     res.json({ message: "vendor deleted" });

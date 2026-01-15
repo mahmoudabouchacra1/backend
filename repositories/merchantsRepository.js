@@ -7,6 +7,13 @@ async function listMerchants() {
   });
 }
 
+async function listMerchantsById(id) {
+  return prisma.merchant.findMany({
+    where: { id },
+    include: { country: true },
+  });
+}
+
 async function getMerchantById(id) {
   return prisma.merchant.findUnique({
     where: { id },
@@ -28,6 +35,7 @@ async function deleteMerchant(id) {
 
 module.exports = {
   listMerchants,
+  listMerchantsById,
   getMerchantById,
   createMerchant,
   updateMerchant,

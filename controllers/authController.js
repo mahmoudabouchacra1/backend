@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const authService = require("../services/authService");
+const usersRepository = require("../repositories/usersRepository");
 
 function createToken(user) {
   const secret = process.env.JWT_SECRET;
@@ -70,4 +71,15 @@ async function login(req, res) {
 module.exports = {
   register,
   login,
+  async me(req, res) {
+    try {
+      const user = await usersRepository.getUserById(req.auth.userId);
+      if (!user) {
+        return res.status(404).json({ message: "user not found" });
+      }
+      res.json({ data: user });
+    } catch (error) {
+      res.status(500).json({ message: "database error" });
+    }
+  },
 };

@@ -134,6 +134,7 @@ async function login(payload) {
     email: user.email,
     userType: user.userType,
     merchantId: user.merchantId,
+    vendorId: user.vendorId,
   };
 }
 

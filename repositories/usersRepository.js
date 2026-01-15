@@ -31,6 +31,22 @@ async function listUsers() {
   });
 }
 
+async function listUsersByMerchantId(merchantId) {
+  return prisma.user.findMany({
+    where: { merchantId },
+    select: userSelect,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+async function listUsersByVendorId(vendorId) {
+  return prisma.user.findMany({
+    where: { vendorId },
+    select: userSelect,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 async function getUserById(id) {
   return prisma.user.findUnique({
     where: { id },
@@ -53,6 +69,8 @@ async function findUserByEmail(email) {
 module.exports = {
   createUser,
   listUsers,
+  listUsersByMerchantId,
+  listUsersByVendorId,
   getUserById,
   updateUser,
   deleteUser,

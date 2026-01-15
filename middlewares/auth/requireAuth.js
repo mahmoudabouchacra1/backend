@@ -34,6 +34,7 @@ async function requireAuth(req, res, next) {
       userId: user.id,
       userType: user.userType,
       merchantId: user.merchantId,
+      vendorId: user.vendorId,
     };
 
     next();

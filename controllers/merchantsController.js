@@ -20,8 +20,19 @@ function parseBoolean(value) {
 
 async function list(req, res) {
   try {
-    const merchants = await merchantsRepository.listMerchants();
-    res.json({ data: merchants });
+    if (req.auth.userType === "ADMIN") {
+      const merchants = await merchantsRepository.listMerchants();
+      return res.json({ data: merchants });
+    }
+
+    if (req.auth.userType === "MERCHANT") {
+      const merchants = await merchantsRepository.listMerchantsById(
+        req.auth.merchantId
+      );
+      return res.json({ data: merchants });
+    }
+
+    return res.status(403).json({ message: "access denied" });
   } catch (error) {
     res.status(500).json({ message: "database error" });
   }
@@ -29,6 +40,9 @@ async function list(req, res) {
 
 async function getById(req, res) {
   try {
+    if (req.auth.userType === "MERCHANT" && req.validatedId !== req.auth.merchantId) {
+      return res.status(403).json({ message: "access denied" });
+    }
     const merchant = await merchantsRepository.getMerchantById(req.validatedId);
     if (!merchant) {
       return res.status(404).json({ message: "merchant not found" });
@@ -42,6 +56,9 @@ async function getById(req, res) {
 const allowedPlans = new Set(["FREE", "PRO", "ENTERPRISE"]);
 
 async function create(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   const {
     name,
     logo,
@@ -91,6 +108,9 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   const {
     name,
     logo,
@@ -156,6 +176,9 @@ async function update(req, res) {
 }
 
 async function remove(req, res) {
+  if (req.auth.userType !== "ADMIN") {
+    return res.status(403).json({ message: "admin access required" });
+  }
   try {
     await merchantsRepository.deleteMerchant(req.validatedId);
     res.json({ message: "merchant deleted" });
